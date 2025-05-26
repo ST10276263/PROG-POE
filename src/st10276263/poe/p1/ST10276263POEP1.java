@@ -1,6 +1,7 @@
 
 package st10276263.poe.p1;
 
+import java.util.ArrayList;
 import java.util.Scanner;
 import javax.swing.JOptionPane;
 
@@ -98,10 +99,10 @@ public class ST10276263POEP1 {
 //Part 2 Methods    
     
     // Stored data
-    private static String savedReNumber,savedMessageId;
+    public static String savedReNumber,savedMessageId;
     
     //test that Recipient's number is formatted correctly
-    private static boolean checkRecipientCell(String rNumber) {
+    public static boolean checkRecipientCell(String rNumber) {
         if(!rNumber.startsWith("+27") || rNumber.length() != 12 ){
             JOptionPane.showMessageDialog(null,"""
                                                Recipient's phone number is incorrectly formatted or does not contain an international code.
@@ -112,14 +113,102 @@ public class ST10276263POEP1 {
         return true;   
         }
     
-    //test that message ID is formatted correctly
-    private static boolean checkMessageId(long messageId) {
-       if (String.valueOf(messageId).length() == 10) {
-           return true;
-       }
-       
-       return false;   
-   }
+        //test that message ID is formatted correctly,not more than 10 digits
+        public static boolean checkMessageId(long messageId) {
+           if (String.valueOf(messageId).length() == 10) {
+               return true;
+           }
+
+           return false;   
+        }
+
+        // Message list
+        public static ArrayList<Message> sentMessages = new ArrayList<>();
+
+        // Message class
+        static class Message {
+            String recipientNumber, content, messageId, hash;
+
+            public Message(String recipientNumber, String content, String messageId, String hash) {
+                this.recipientNumber = recipientNumber;
+                this.content = content;
+                this.messageId = messageId;
+                this.hash = hash;
+            }
+
+            public String toString() {
+                return "Sent to: " + recipientNumber 
+                        + "\nMessage ID: " + messageId
+                        + "\nMessage hash: " + hash
+                        + "\nMessage sent: " + content;
+            }
+        }
+    
+        public static String SentMessage(String message, int messageNumber) {
+        int messageOptions = Integer.parseInt(JOptionPane.showInputDialog(null, """
+                        Choose an Option:
+                        1) Send message
+                        2) Store without sending
+                        3) Disregard
+                        """, "QuickChat", JOptionPane.INFORMATION_MESSAGE));
+
+        // Auto generate message ID
+        if (messageOptions == 1 || messageOptions == 2) {
+            long messageId = 1_000_000_000L + (long) (Math.random() * 9_000_000_000L);
+            if (checkMessageId(messageId)) {
+                savedMessageId = String.valueOf(messageId);
+            }
+
+            String messageHash = createMessageHash(savedMessageId, messageNumber, message);
+                
+                Message newMessage = new Message(savedReNumber, message, savedMessageId, messageHash);
+                sentMessages.add(newMessage);
+
+            if (messageOptions == 1) {
+                JOptionPane.showMessageDialog(null, newMessage,
+                        "QuickChat", JOptionPane.INFORMATION_MESSAGE);
+                return "Sent";
+            } else {
+                JOptionPane.showMessageDialog(null, "Message stored (not sent).",
+                        "QuickChat", JOptionPane.INFORMATION_MESSAGE);
+                return "Stored";
+            }
+        } else if (messageOptions == 3) {
+            JOptionPane.showMessageDialog(null, "Message discarded.",
+                    "QuickChat", JOptionPane.INFORMATION_MESSAGE);
+            return "Discarded";
+        } else {
+            JOptionPane.showMessageDialog(null, "Invalid choice. Message discarded by default.",
+                    "QuickChat", JOptionPane.INFORMATION_MESSAGE);
+            return "Invalid";
+        }
+        }
+    
+        //Method to add the total messages that have been sent by the user
+        public static int addTotalMessages() {
+            return sentMessages.size();
+        }
+
+
+        public static String printMessage() {
+            if (sentMessages.isEmpty()) {
+                return "No messages were sent.";
+            }
+
+            StringBuilder messageList = new StringBuilder("Messages sent:\n\n");
+            for (Message msg : sentMessages) {
+                messageList.append(msg.toString()).append("\n\n");
+            }
+            return messageList.toString();
+        }
+        
+        public static String createMessageHash(String messageId, int messageNumber, String messageContent) {
+            String[] words = messageContent.trim().split("\\s+");
+            String firstWord = words.length > 0 ? words[0] : "";
+            String lastWord = words.length > 1 ? words[words.length - 1] : firstWord;
+            String hash = messageId.substring(0, 2) + ":" + messageNumber + ":" + firstWord + "_" + lastWord;
+            return hash.toUpperCase();
+        }
 
     
     public static void main(String[] args) {
@@ -226,12 +315,12 @@ public class ST10276263POEP1 {
         
 
        //Declare variables
-        int option = 2, numberOfMessages;
+        int option = 0, numberOfMessages;
         String rNumber;
         
         //Welcome Page
-        JOptionPane.showMessageDialog(null,"Hi " + savedFullName + " it is great to see you again."                                //add "savedFullName"
-                                      , "Welcome to QuickChat", JOptionPane.INFORMATION_MESSAGE); //quickchat 
+        JOptionPane.showMessageDialog(null,"Hi " + savedFullName        //add "savedFullName" when done
+                                      ,"Welcome to QuickChat!", JOptionPane.INFORMATION_MESSAGE);  
         
         //Menu Creation
         while(option != 3) {
@@ -240,65 +329,49 @@ public class ST10276263POEP1 {
                                             1) Send Messages
                                             2) Show recently sent messages
                                             3) Quit"""
-                                            , "QuickChat", JOptionPane.INFORMATION_MESSAGE));   //quickchat
+                                            , "QuickChat", JOptionPane.INFORMATION_MESSAGE));
             
-            switch(option) {
-                
+            switch (option) {
                 case 1:
-                    while(true) {
-                    rNumber = JOptionPane.showInputDialog(null, "Enter recipient's number:"
-                                                         , "QuickChat", JOptionPane.INFORMATION_MESSAGE);
-                    if (checkRecipientCell(rNumber)) {
-                savedReNumber = rNumber;
-                break;
-            }
-        }
-                    
-                     numberOfMessages = Integer.parseInt(
-                        JOptionPane.showInputDialog(null, "Please enter the number of messages you want to send:"
-                        , "QuickChat", JOptionPane.INFORMATION_MESSAGE)
-                    );
+                    // Get recipient number
+                    while (true) {
+                        rNumber = JOptionPane.showInputDialog(null, "Enter recipient's number:", "QuickChat", JOptionPane.INFORMATION_MESSAGE);
+                        if (checkRecipientCell(rNumber)) {
+                            savedReNumber = rNumber;
+                            break;
+                        }
+                    }
 
+                    // Get number of messages to send
+                    numberOfMessages = Integer.parseInt(
+                            JOptionPane.showInputDialog(null, "Please enter the number of messages you want to send:",
+                                    "QuickChat", JOptionPane.INFORMATION_MESSAGE));
+
+                    // Message loop
                     for (int i = 0; i < numberOfMessages; i++) {
-                        String message = JOptionPane.showInputDialog(null, "Enter message #" + (i + 1) + ":"
-                                                                    , "QuickChat", JOptionPane.INFORMATION_MESSAGE);
-                    while(true) {  
-                        if (message.length() <= 50) {
-                            JOptionPane.showMessageDialog(null, "Message Sent.");
-                            break;
-                        } else {
-                            JOptionPane.showMessageDialog(null, "Please enter a message of less than 250 characters long.");
-                            break;
-                        }
-                    }    
-                        
-                        //auto generated 10 digit Message ID
-                        long messageId = 1_000_000_000L + (long)(Math.random() * 9_000_000_000L);
-                        if (checkMessageId(messageId)) {
-                            savedMessageId = String.valueOf(messageId);
-                        }
-                        
-                        JOptionPane.showMessageDialog(null, """
-                                                            Sent to:  """ + rNumber
-                                                            + "\nMessage ID: "  + messageId
-                                                            + "\nMessage #" + (i + 1)
-                                                            + "\nMessage sent: " + message
-                                                            , "Messages", JOptionPane.INFORMATION_MESSAGE);
+                        String message;
+                        do {
+                            message = JOptionPane.showInputDialog(null, "Enter message #" + (i + 1) + " (Max 250 chars):",
+                                    "QuickChat", JOptionPane.INFORMATION_MESSAGE);
+                        } while (message.length() > 250);
+
+                        //Method used for the user to either "store", "disregard" or "send" the message
+                        SentMessage(message, i + 1);
                     }
                     break;
-                case 2:JOptionPane.showMessageDialog(null," \"Coming Soon\" "
+                case 2:JOptionPane.showMessageDialog(null," \"Coming Soon\" "                           //  Feature has not yet been implemented
                                                     , "QuickChat", JOptionPane.INFORMATION_MESSAGE); 
                     break;
-                case 3:JOptionPane.showMessageDialog(null, "Bye bye!"
+                case 3:JOptionPane.showMessageDialog(null, "Bye bye!"                                   //User quitting program
                                                     , "Closing QuickChat", JOptionPane.INFORMATION_MESSAGE); 
                     break;
                 default: JOptionPane.showMessageDialog(null, "Invalid option. Please select 1, 2 or 3."
-                                                      , "QuickChat", JOptionPane.INFORMATION_MESSAGE); 
+                                                      , "QuickChat", JOptionPane.INFORMATION_MESSAGE);   //Prompt if user enters the wrong Menu Option
                     break;
                     
             }
         }
-        
+                
 
         
     }
@@ -311,6 +384,4 @@ public class ST10276263POEP1 {
 //OpenAI.(2025).ChatGPT (April 14 version)[Large language model][online] Available at: <https://chat.openai.com/ >[Accessed 16 April  2025].
 
 //W3Schools, (n.d.). Java while loop. [online] Available at: <https://www.w3schools.com/java/java_while_loop.asp> [Accessed 15 April 2025].
-
-//hello
 
