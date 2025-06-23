@@ -474,7 +474,7 @@ public class ST10276263POEP1 {
         
         
         
-        //POE Part 2
+        //POE Part 2 - Updated & includes addtitions for Part 3
         
 
        //Declare variables
