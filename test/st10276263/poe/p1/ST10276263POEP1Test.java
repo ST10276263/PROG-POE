@@ -144,6 +144,122 @@ public class ST10276263POEP1Test {
         assertFalse(ST10276263POEP1.sentMessages.isEmpty(), "Messages list should not be empty");
         assertEquals(testMessage, ST10276263POEP1.sentMessages.get(0).content, "Stored message should match input");
     }
+    
+    
+    
+    //Part 3
+    
+    
+    @BeforeEach
+    public void setUp() {
+        ST10276263POEP1.sentMessages.clear();
+        ST10276263POEP1.sentMessagesArray.clear();
+        ST10276263POEP1.storedMessageArray.clear();
+        ST10276263POEP1.disregardedMessagesArray.clear();
+        ST10276263POEP1.messageHashArray.clear();
+        ST10276263POEP1.messageIdArray.clear();
+        
+        ST10276263POEP1.savedFullName = "Developer";
+        
+        ST10276263POEP1.Message msg1 = new ST10276263POEP1.Message(
+            "+27834557896", 
+            "Did you get the cake?", 
+            "1000000001", 
+            "10:1:Did_cake?"
+        );
+        ST10276263POEP1.sentMessages.add(msg1);
+        ST10276263POEP1.sentMessagesArray.add("Did you get the cake?");
+        
+        ST10276263POEP1.Message msg2 = new ST10276263POEP1.Message(
+            "+27838884567", 
+            "Where are you? You are late! I have asked you to be on time.", 
+            "1000000002", 
+            "10:2:Where_time."
+        );
+        ST10276263POEP1.sentMessages.add(msg2);
+        ST10276263POEP1.storedMessageArray.add("Where are you? You are late! I have asked you to be on time.");
+        
+        ST10276263POEP1.Message msg3 = new ST10276263POEP1.Message(
+            "+27834484567", 
+            "Yohoooo, I am at your gate.", 
+            "1000000003", 
+            "10:3:Yohoooo_gate."
+        );
+        ST10276263POEP1.sentMessages.add(msg3);
+        ST10276263POEP1.disregardedMessagesArray.add("Yohoooo, I am at your gate.");
+        
+        ST10276263POEP1.Message msg4 = new ST10276263POEP1.Message(
+            "0838884567", 
+            "It is dinner time !", 
+            "1000000004", 
+            "10:4:It_!"
+        );
+        ST10276263POEP1.sentMessages.add(msg4);
+        ST10276263POEP1.sentMessagesArray.add("It is dinner time !");
+        
+        ST10276263POEP1.Message msg5 = new ST10276263POEP1.Message(
+            "+27838884567", 
+            "Ok, I am leaving without you.", 
+            "1000000005", 
+            "10:5:Ok_you."
+        );
+        ST10276263POEP1.sentMessages.add(msg5);
+        ST10276263POEP1.storedMessageArray.add("Ok, I am leaving without you.");
+    }
+
+    @Test
+    public void testSentMessagesArrayCorrectlyPopulated() {
+        assertEquals(2, ST10276263POEP1.sentMessagesArray.size());
+        assertTrue(ST10276263POEP1.sentMessagesArray.contains("Did you get the cake?"));
+        assertTrue(ST10276263POEP1.sentMessagesArray.contains("It is dinner time !"));
+    }
+
+    @Test
+    public void testDisplayLongestMessage() {
+        String result = ST10276263POEP1.displayLongestMessage();
+        assertTrue(result.contains("Where are you? You are late! I have asked you to be on time."));
+    }
+
+    @Test
+    public void testSearchForMessageID() {
+        String result = ST10276263POEP1.searchMessageId("1000000004");
+        assertTrue(result.contains("0838884567"));
+        assertTrue(result.contains("It is dinner time !"));
+    }
+
+    @Test
+    public void testSearchAllMessagesForRecipient() {
+        String result = ST10276263POEP1.searchRecipientMessages("+27838884567");
+        assertTrue(result.contains("Where are you? You are late! I have asked you to be on time."));
+        assertTrue(result.contains("Ok, I am leaving without you."));
+    }
+
+    @Test
+    public void testDeleteMessageByHash() {
+        String result = ST10276263POEP1.deleteMessageByHash("10:2:Where_time.");
+        assertEquals("Message deleted successfully.", result);
+        
+        boolean found = false;
+        for (ST10276263POEP1.Message msg : ST10276263POEP1.sentMessages) {
+            if (msg.hash.equals("10:2:Where_time.")) {
+                found = true;
+                break;
+            }
+        }
+        assertFalse(found);
+    }
+
+    @Test
+    public void testDisplayReport() {
+        String report = ST10276263POEP1.displayFullReport();
+        assertTrue(report.contains("MESSAGE REPORT"));
+        assertTrue(report.contains("+27834557896"));
+        assertTrue(report.contains("Did you get the cake?"));
+        assertTrue(report.contains("Where are you? You are late!"));
+        assertTrue(report.contains("It is dinner time !"));
+    }
+
+  
 }
 
     

@@ -4,6 +4,7 @@ package st10276263.poe.p1;
 import java.util.ArrayList;
 import java.util.Scanner;
 import javax.swing.JOptionPane;
+import java.io.*;
 
 public class ST10276263POEP1 { 
         
@@ -164,16 +165,22 @@ public class ST10276263POEP1 {
                 Message newMessage = new Message(savedReNumber, message, savedMessageId, messageHash);
                 sentMessages.add(newMessage);
 
+            //Addition of Array Method calls    
             if (messageOptions == 1) {
+                sentMessagesArray.add(message);    
+                messageHashArray.add(messageHash);     
+                messageIdArray.add(savedMessageId);     
                 JOptionPane.showMessageDialog(null, newMessage,
                         "QuickChat", JOptionPane.INFORMATION_MESSAGE);
                 return "Sent";
             } else {
+                storedMessageArray.add(message);     
                 JOptionPane.showMessageDialog(null, "Message stored (not sent).",
                         "QuickChat", JOptionPane.INFORMATION_MESSAGE);
                 return "Stored";
             }
         } else if (messageOptions == 3) {
+            disregardedMessagesArray.add(message);     
             JOptionPane.showMessageDialog(null, "Message discarded.",
                     "QuickChat", JOptionPane.INFORMATION_MESSAGE);
             return "Discarded";
@@ -209,8 +216,164 @@ public class ST10276263POEP1 {
             String hash = messageId.substring(0, 2) + ":" + messageNumber + ":" + firstWord + "_" + lastWord;
             return hash.toUpperCase();
         }
+        
+        //New Addition of JSON Methods
+        private static void writeMessagesToJsonFile() {
+        File file = new File("messages.json");
+        try (FileWriter writer = new FileWriter(file)) {
+            writer.write("[\n");
+            for (int i = 0; i < sentMessages.size(); i++) {
+                Message msg = sentMessages.get(i);
+                writer.write(String.format(
+                    "  {\n" +
+                    "    \"recipientNumber\": \"%s\",\n" +
+                    "    \"content\": \"%s\",\n" +
+                    "    \"messageId\": \"%s\",\n" +
+                    "    \"hash\": \"%s\"\n" +
+                    "  }",
+                    escapeJson(msg.recipientNumber),
+                    escapeJson(msg.content),
+                    escapeJson(msg.messageId),
+                    escapeJson(msg.hash)
+                ));
+                if (i < sentMessages.size() - 1) writer.write(",");
+                writer.write("\n");
+            }
+            writer.write("]");
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "Error saving messages: " + e.getMessage(),
+                                          "File Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
+    private static void readMessagesFromJsonFile() {
+        File file = new File("messages.json");
+        sentMessages.clear();
+        
+        if (!file.exists()) return;
+        
+        try (Scanner scanner = new Scanner(file)) {
+            StringBuilder json = new StringBuilder();
+            while (scanner.hasNextLine()) {
+                json.append(scanner.nextLine().trim());
+            }
+            
+            String[] messages = json.toString().split("\\},\\s*\\{");
+            for (String msg : messages) {
+                msg = msg.replaceAll("[\\[\\]{}]", "");
+                if (msg.trim().isEmpty()) continue;
+                
+                String[] parts = msg.split("\",\\s*\"");
+                String recipient = "", content = "", id = "", hash = "";
+                
+                for (String part : parts) {
+                    if (part.startsWith("recipientNumber")) 
+                        recipient = part.split(":")[1].replace("\"", "").trim();
+                    else if (part.startsWith("content")) 
+                        content = part.split(":")[1].replace("\"", "").trim();
+                    else if (part.startsWith("messageId")) 
+                        id = part.split(":")[1].replace("\"", "").trim();
+                    else if (part.startsWith("hash")) 
+                        hash = part.split(":")[1].replace("\"", "").trim();
+                }
+                sentMessages.add(new Message(recipient, content, id, hash));
+            }
+        } catch (FileNotFoundException e) {
+            // Silent fail - file will be created on first save
+        }
+    }
+
+    private static String escapeJson(String input) {
+        return input.replace("\\", "\\\\")
+                   .replace("\"", "\\\"")
+                   .replace("\n", "\\n")
+                   .replace("\r", "\\r");
+    }
     
+    
+    
+    
+    
+    //Part 3 Methods
+        
+        public static ArrayList<String> sentMessagesArray = new ArrayList<>();
+        public static ArrayList<String> disregardedMessagesArray = new ArrayList<>();
+        public static ArrayList<String> storedMessageArray = new ArrayList<>();
+        public static ArrayList<String> messageHashArray = new ArrayList<>();
+        public static ArrayList<String> messageIdArray = new ArrayList<>();
+        
+        //Method to display Sender and Recipient of all sent messages
+    public static String displaySenderAndRecipient() {
+        StringBuilder result = new StringBuilder();
+        for (Message msg : sentMessages) {
+            result.append("Sender: ").append(savedFullName)
+                .append("\nRecipient: ").append(msg.recipientNumber)
+                .append("\n\n");
+        }
+        return result.toString();
+    }
+    
+    //Method displaying longest sent message
+    public static String displayLongestMessage() {
+        if (sentMessages.isEmpty()) return "No messages sent.";
+        
+        Message longest = sentMessages.get(0);
+        for (Message msg : sentMessages) {
+            if (msg.content.length() > longest.content.length()) {
+                longest = msg;
+            }
+        }
+        return "Longest message:\n" + longest.content;
+    }
+    
+     //Method to search for messageID
+    public static String searchMessageId(String id) {
+        for (Message msg : sentMessages) {
+            if (msg.messageId.equals(id)) {
+                return "Recipient: " + msg.recipientNumber + "\nMessage: " + msg.content;
+            }
+        }
+        return "Message ID not found.";
+    }
+
+    // Method to search for all messages sent to specific recipient
+    public static String searchRecipientMessages(String recipient) {
+        StringBuilder result = new StringBuilder();
+        for (Message msg : sentMessages) {
+            if (msg.recipientNumber.equals(recipient)) {
+                result.append("Message: ").append(msg.content).append("\n\n");
+            }
+        }
+        return result.length() > 0 ? result.toString() : "No messages found for this recipient.";
+    }
+
+    // Method to delete a message with its message hash
+    public static String deleteMessageByHash(String hash) {
+        for (int i = 0; i < sentMessages.size(); i++) {
+            if (sentMessages.get(i).hash.equals(hash)) {
+                sentMessages.remove(i);
+                return "Message deleted successfully.";
+            }
+        }
+        return "Message hash not found.";
+    }
+
+    //Method to display report of full details for all messages sent
+    public static String displayFullReport() {
+        if (sentMessages.isEmpty()) return "No messages sent.";
+        
+        StringBuilder report = new StringBuilder("MESSAGE REPORT\n\n");
+        for (Message msg : sentMessages) {
+            report.append("Recipient: ").append(msg.recipientNumber)
+                  .append("\nMessage ID: ").append(msg.messageId)
+                  .append("\nMessage Hash: ").append(msg.hash)
+                  .append("\nMessage: ").append(msg.content)
+                  .append("\n\n");
+        }
+        return report.toString();
+    }
+
+        
     public static void main(String[] args) {
          Scanner scanner = new Scanner(System.in);
          
@@ -331,6 +494,7 @@ public class ST10276263POEP1 {
                                             3) Quit"""
                                             , "QuickChat", JOptionPane.INFORMATION_MESSAGE));
             
+            //QuickChat Main Menu
             switch (option) {
                 case 1:
                     // Get recipient number
@@ -359,10 +523,43 @@ public class ST10276263POEP1 {
                         SentMessage(message, i + 1);
                     }
                     break;
-                case 2:JOptionPane.showMessageDialog(null," \"Coming Soon\" "                           //  Feature has not yet been implemented
-                                                    , "QuickChat", JOptionPane.INFORMATION_MESSAGE); 
+                    
+                    //Changed from "Coming Soon" to "Report Options Menu"
+                case 2:int reportOptions = Integer.parseInt(JOptionPane.showInputDialog(null, """
+                                                                                              Report Options:
+                                                                                              1) Display Sender or Recipient of all messages.
+                                                                                              2) Display longest sent message.
+                                                                                              3) Search for a message ID.
+                                                                                              4) Search for all messages sent to a specific recipient.
+                                                                                              5) Delete message using message hash.
+                                                                                              6) Display full details of all messages sent.
+                                                                                              7) Back to Main Menu""",
+                                                                                              "QuickChat", JOptionPane.INFORMATION_MESSAGE));
+                        //Report Options Menu
+                        switch (reportOptions) {
+                            case 1:JOptionPane.showMessageDialog(null, displaySenderAndRecipient());
+                                break;
+                            case 2:JOptionPane.showMessageDialog(null,displayLongestMessage());
+                                break;
+                            case 3:String searchMessageId = JOptionPane.showInputDialog(null, "Enter message Id to search.");
+                                   JOptionPane.showMessageDialog(null, searchMessageId(searchMessageId));
+                                break;
+                            case 4:String searchRecipient = JOptionPane.showInputDialog(null, "Enter recipient's number to search.");
+                                   JOptionPane.showMessageDialog(null, searchRecipientMessages(searchRecipient));
+                                break;
+                            case 5:String deleteHash = JOptionPane.showInputDialog(null, "Enter the message hash to delete.");
+                                   JOptionPane.showMessageDialog(null, deleteMessageByHash(deleteHash));
+                                break;
+                            case 6:JOptionPane.showMessageDialog(null, displayFullReport());
+                                break;
+                            case 7:
+                                break;
+                            default:JOptionPane.showMessageDialog(null, "Invalid option. Please select any option from 1-6");
+                        //End of Report Menu code    
+                        }
+                        
                     break;
-                case 3:JOptionPane.showMessageDialog(null, "Bye bye!"                                   //User quitting program
+                case 3:JOptionPane.showMessageDialog(null, "Goodbye " + savedFullName                                   //User quitting program
                                                     , "Closing QuickChat", JOptionPane.INFORMATION_MESSAGE); 
                     break;
                 default: JOptionPane.showMessageDialog(null, "Invalid option. Please select 1, 2 or 3."
@@ -371,9 +568,8 @@ public class ST10276263POEP1 {
                     
             }
         }
-                
-
         
+   
     }
     
 }
