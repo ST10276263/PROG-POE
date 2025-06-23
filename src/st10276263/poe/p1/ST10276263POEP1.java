@@ -279,7 +279,7 @@ public class ST10276263POEP1 {
                 sentMessages.add(new Message(recipient, content, id, hash));
             }
         } catch (FileNotFoundException e) {
-            // Silent fail - file will be created on first save
+            
         }
     }
 
